@@ -1,0 +1,83 @@
+-- 04-a-5000
+ 
+Намерете командите на 10-те най-стари процеси в системата.
+ 
+ps -o cmd,start_time
+ 
+CMD         START
+-bash           12:24
+ps -o cmd, start_time   12:29
+ 
+^процесите само за моя терминал
+ 
+ps -еo cmd,start_time,etime(elapsed time)
+ 
+----------
+ 
+ps -eo cmd --sort=start_time | head -n 10
+ 
+-- 04-a-6000
+ 
+Намерете PID и командата на процеса, който заема най-много виртуална памет в системата.
+ 
+Use the -o option to select which columns are displayed. If you put = after the column name, the header line is suppressed.
+vsz - virtual size
+--sort=-vsz -> reverse order
+ 
+ps -eo cmd= --sort=-vsz | head -n 1
+ 
+-- 04-b-5000
+ 
+Намерете колко физическа памет заемат всички процеси на потребителската група SI.
+ 
+-G specifies group by name or group id
+-rss - resident set size, the non-swapped physical memory thet a task has used in kilobytes
+ 
+ps -G SI -eo rss | awk '{sum+=$0} END {print sum}'
+ 
+-- 04-b-7000
+ 
+Намерете колко физическа памет заемат осреднено всички процеси на потребителската група SI. Внимавайте, когато групата няма нито един процес.
+ 
+NR is a variable equal to the number of rows in the file
+ 
+ps -G SI -eo rss | awk '{sum += $0} END {if (NR > 0) print sum / NR ; else print 0}'
+ 
+-- 04-b-8000
+ 
+Намерете всички PID и техните команди (без аргументите), които нямат tty, което ги управлява. Изведете списък само с командите без повторения.
+ 
+по принцип -t - ; не работи
+-t find by terminals (tty) list
+- finds processes not associated with any terminal
+sign for no terminal: ?
+ 
+a      this option causes ps to list all processes with a terminal
+-N     Select all processes except those that fulfill the specified conditions (negates
+       the selection)
+ 
+c - doesn't show command arguments
+ 
+ps aco pid, cmd -N
+ 
+----------
+ps aco pid=,cmd= -N --sort=cmd | uniq -f 2
+ 
+-f skips comparing a field
+ 
+-- 04-b-9000 
+ 
+Да се отпечатат PID на всички процеси, които имат повече деца от родителския си процес.
+
+#!/bin/bash
+
+children(){
+        ps --ppid "$1" --no-headers | wc -l 2>/dev/null
+}
+
+ps -e -o pid,ppid --no-headers | while read PIDvar PPIDvar ; do
+        if [ $(children "${PIDvar}") -gt $(children "${PPIDvar}") ] ; then
+                echo "${PIDvar}"
+        fi
+done
+
